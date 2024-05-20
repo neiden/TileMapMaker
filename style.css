@@ -1,0 +1,13 @@
+#outputCanvas, #highlightCanvas {
+    position: absolute;
+}
+
+#canvasContainer {
+    position: relative;
+}
+
+#outputCanvas, #highlightCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}

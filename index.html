@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>TileMaker</title>
+</head>
+
+<body>
+    <canvas id="uploadCanvas" width="0" height="0"></canvas>
+    <img alt="temp.png" id="tileImg">
+    <form id="uploadForm">
+        <input type="file" id="fileInput">
+    </form>
+    <input type="number" placeholder="Tilesize: 32" id="tileSizeInput"> 
+    <label for="">Select Mode</label>
+    <select id="modeSelect">
+        <option value="0">Image</option>
+        <option value="1">JSON</option>
+    </select>
+    <input type="number" placeholder="Output width: 800" id="outputWidth">
+    <input type="number" placeholder="Output height: 800" id="outputHeight">
+    <div id="canvasContainer">
+      <canvas id="displayCanvas"></canvas>
+      <canvas id="highlightCanvas"></canvas>
+    </div>
+    <button id="downloadButton">Download Image</button>
+
+</body>
+  <script src="script.js"></script>
+
+</html>
