@@ -1,11 +1,13 @@
 //TODO:
-// Add event listener for dragging mouse to draw tiles [x]
-// Add behavior for Image mode:
-// - Create download image button that downloads contents of displayCanvas [x]
+// Add grid background to displayCanvas
+// Reinitialize tileMap when tileSize is changed 
 // Add behavior for JSON mode:
 // - Add label input whenever a new tile is selected [x]
 // - Create download JSON button that downloads contents of tileMap and the labels for each tile
-// Add feature to define size of output canvas
+// Add event listener for dragging mouse to draw tiles [x]
+// Add feature to define size of output canvas [x]
+// Add behavior for Image mode: [x]
+// - Create download image button that downloads contents of displayCanvas [x]
 // style page??
 
 
@@ -106,14 +108,10 @@ canvas.addEventListener('click', function(e) {
     else{
         //Tile has not been selected before, assign a new label value
         ++id;
-        selectedTilesMap[key] = {
-            label: id,
+        selectedTilesMap[key] = id
+        labels[id] = {
             x: selectedTile.x * tileSize,
             y: selectedTile.y * tileSize};
-        if (mode === 1){
-            const label = prompt('Enter a label for this tile');
-            labels[id] = label;
-        }
     }
     console.log(labels)
     console.log(selectedTilesMap);
@@ -145,7 +143,23 @@ function loadTileMap(){
 
 const downloadButton = document.getElementById('downloadButton');
 downloadButton.addEventListener('click', downloadCanvasAsPNG);
+const downloadJSONButton = document.getElementById('jsonBtn');
+downloadJSONButton.addEventListener('click', downloadJSON);
 
+function downloadJSON(){
+    const data = {
+        tileMap: tileMap,
+        labels: labels
+    };
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
+    const link = document.createElement('a');
+    link.href = dataStr;
+    link.download = 'tileMap.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+}
 
 function downloadCanvasAsPNG() {
     const dataUrl = outputCanvas.toDataURL('image/png');
