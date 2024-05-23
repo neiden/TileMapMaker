@@ -1,4 +1,5 @@
 //TODO:
+// Refactor code to use Canvas object instead of global variables
 // Add grid background to displayCanvas
 // Reinitialize tileMap when tileSize is changed 
 // Add behavior for JSON mode:
@@ -10,6 +11,9 @@
 // - Create download image button that downloads contents of displayCanvas [x]
 // style page??
 
+
+var currCtx = null;
+var topCanvas = null;
 
 const fileInput = document.getElementById('fileInput');
 
@@ -39,6 +43,39 @@ modeSelect.addEventListener('change', function(e) {
     }
 });
 
+const layerSelect = document.getElementById('layerSelect');
+var layer = 1;
+layerSelect.addEventListener('change', function(e) {
+    layer = parseInt(e.target.value);
+    currentCanvas = document.getElementById(`displayCanvas${layer}`);
+});
+
+
+const addLayerBtn = document.getElementById('addLayerBtn');
+addLayerBtn.addEventListener('click', function(e) {
+    const newLayer = document.createElement('option');
+    const maxLayer = Array.from(layerSelect.options).reduce((max, option) => Math.max(max, parseInt(option.value)), 0);
+    newLayer.value = maxLayer + 1;
+    newLayer.text = `Layer`+ (maxLayer + 1);
+    layerSelect.add(newLayer);
+    layerSelect.selectedIndex = layerSelect.length - 1;
+    layer = maxLayer + 1;
+    
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.id = `displayCanvas${maxLayer + 1}`;
+    tempCanvas.width = canvasWidth;
+    tempCanvas.height = canvasHeight;   
+    tempCanvas.style.position = 'absolute';
+    tempCanvas.style.top = '0';
+    tempCanvas.style.left = '0';
+
+    addLayer();
+
+    currentCanvas = tempCanvas;
+    const canvasContainer = document.getElementById('canvasContainer');
+    canvasContainer.insertBefore(tempCanvas, topCanvas.canvas);
+});
+
 
 
 
@@ -48,17 +85,23 @@ let tileSize = 32;
 const tileSizeInput = document.getElementById('tileSizeInput');
 const outputHeightInput = document.getElementById('outputHeight');
 const outputWidthInput = document.getElementById('outputWidth');
+const canvasHeight = 800;
+const canvasWidth = 800;
+var canvasLayers = [];
+
 
 outputHeightInput.addEventListener('change', function(e) {
     const height = parseInt(e.target.value);
-    outputCanvas.height = height;
-    highlightCanvas.height = height;
+    canvasHeight = height;
+    outputCanvas.height = canvasHeight;
+    highlightCanvas.height = canvasHeight;
     tileMap = loadTileMap();
 });
 outputWidthInput.addEventListener('change', function(e) {
     const width = parseInt(e.target.value);
-    outputCanvas.width = width;
-    highlightCanvas.width = width;
+    canvasWidth = width;
+    outputCanvas.width = canvasWidth;
+    highlightCanvas.width = canvasWidth;
     tileMap = loadTileMap();
 });
 
@@ -77,6 +120,8 @@ tileImg.onload = function() {
 };
 
 canvas.addEventListener('mousemove', function(e) {
+    console.log("Top Canvas: " + topCanvas.canvas.id);
+    console.log("Current Canvas: " + currentCanvas.id);
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -118,29 +163,33 @@ canvas.addEventListener('click', function(e) {
   });
 
 var currentTile = new Image();
-const outputCanvas = document.getElementById('displayCanvas');
+const outputCanvas = document.getElementById('displayCanvas1');
 const outputCtx = outputCanvas.getContext('2d');
-outputCanvas.width = 800;
-outputCanvas.height = 800;
+outputCanvas.width = canvasWidth;
+outputCanvas.height = canvasHeight;
 outputCtx.fillStyle = 'grey';
 outputCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
-
 var tileMap = loadTileMap();
 
 function loadTileMap(){
-    let tileMap = new Array(Math.floor(outputCanvas.width/tileSize));
-    for (let i = 0; i < tileMap.length; ++i) {
-        tileMap[i] = new Array(Math.floor(outputCanvas.height/tileSize));
+    let tileMap = {[layer]: new Array(Math.floor(outputCanvas.width/tileSize))} ;
+    for (let i = 0; i < tileMap[layer].length; ++i) {
+        tileMap[layer][i] = new Array(Math.floor(outputCanvas.height/tileSize));
     }
-    for (let i = 0; i < tileMap.length; ++i) {
+    for (let i = 0; i < tileMap[layer].length; ++i) {
         for (let j = 0; j < Math.floor(outputCanvas.height/tileSize); ++j) {
-            tileMap[i][j] = 0;
+            tileMap[layer][i][j] = 0;
         }
     }
-
+    console.log(tileMap)
     return tileMap;
 }
 
+function addLayer(){
+    tileMap[layer] = loadTileMap()[layer]; 
+    console.log(tileMap);
+}
+   
 const downloadButton = document.getElementById('downloadButton');
 downloadButton.addEventListener('click', downloadCanvasAsPNG);
 const downloadJSONButton = document.getElementById('jsonBtn');
@@ -151,8 +200,8 @@ function downloadJSON(){
         tileMap: tileMap,
         labels: labels
     };
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
     const link = document.createElement('a');
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
     link.href = dataStr;
     link.download = 'tileMap.json';
     document.body.appendChild(link);
@@ -172,6 +221,9 @@ function downloadCanvasAsPNG() {
 }
 
 
+
+
+
 const highlightCanvas = document.getElementById('highlightCanvas');
 const highlightCtx = highlightCanvas.getContext('2d');
 let isDragging = false;
@@ -179,63 +231,36 @@ let rightClick = false;
 highlightCanvas.width = outputCanvas.width;
 highlightCanvas.height = outputCanvas.height;
 
-highlightCanvas.addEventListener('mousedown', function(e) {
+var currentCanvas = outputCanvas;
+
+var topCanvas = new Canvas('highlightCanvas', tileSize, canvasWidth, canvasHeight);
+
+topCanvas.canvas.addEventListener('click', function(e) {
+    topCanvas.drawTile(currentCanvas, selectedTile, e, tileMap, layer, id);
+    console.log(tileMap);
+});
+
+topCanvas.canvas.addEventListener('mousedown', function(e) {
     isDragging = true;
     rightClick = e.button === 2;
 });
 
-highlightCanvas.addEventListener('mouseup', function(e) {
+topCanvas.canvas.addEventListener('mouseup', function(e) {
     isDragging = false;
 });
 
-
-highlightCanvas.addEventListener('mousemove', function(e) {
-    if (!isDragging) {
-        // Highlight the tile the mouse is currently hovering over
-        const rect = highlightCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const tileX = Math.floor(x / tileSize);
-        const tileY = Math.floor(y / tileSize);
-      
-        highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
-        highlightCtx.strokeStyle = 'red';
-        highlightCtx.strokeRect(tileX * tileSize, tileY * tileSize, tileSize, tileSize);
+topCanvas.canvas.addEventListener('mousemove', function(e) {
+    if (!isDragging){
+        topCanvas.highlightTile(e)
     }
-   else if (rightClick){
-        //Dragging to erase tiles
-        highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
-        e.preventDefault();
-        const rect = highlightCanvas.getBoundingClientRect();
-        const x = Math.floor((e.clientX - rect.left) / tileSize) * tileSize;
-        const y = Math.floor((e.clientY - rect.top) / tileSize) * tileSize;
-        tileMap[Math.floor(y/tileSize)][Math.floor(x/tileSize)] = 0;
-        outputCtx.fillRect(x, y, tileSize, tileSize);
+    else if (rightClick){
+        topCanvas.deleteTile(e, currentCanvas, layer);
     }
     else{
-        //Dragging to draw tiles
-        drawTile(e);
+        topCanvas.drawTile(currentCanvas, selectedTile, e, tileMap, layer, id);
     }
 });
 
-function drawTile(e){
-    const rect = highlightCanvas.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / tileSize) * tileSize;
-    const y = Math.floor((e.clientY - rect.top) / tileSize) * tileSize;
-    tileMap[Math.floor(y/tileSize)][Math.floor(x/tileSize)] = id;
-    console.log(tileMap);
-    outputCtx.drawImage(tileImg, selectedTile.x * tileSize, selectedTile.y * tileSize, tileSize, tileSize, x, y, tileSize, tileSize);
-}
-
-
-highlightCanvas.addEventListener('click', drawTile);
-
-highlightCanvas.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-
-    const rect = highlightCanvas.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / tileSize) * tileSize;
-    const y = Math.floor((e.clientY - rect.top) / tileSize) * tileSize;
-    tileMap[Math.floor(y/tileSize)][Math.floor(x/tileSize)] = 0;
-    outputCtx.fillRect(x, y, tileSize, tileSize);
+topCanvas.canvas.addEventListener('contextmenu', function(e) {
+    topCanvas.deleteSingleTile(e, currentCanvas, layer);
 });

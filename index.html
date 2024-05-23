@@ -14,6 +14,11 @@
         <input type="file" id="fileInput">
     </form>
     <input type="number" placeholder="Tilesize: 32" id="tileSizeInput"> 
+    <button id="addLayerBtn">Add Layer</button>
+    <label for="">Select Layer</label>
+    <select id="layerSelect">
+      <option value="1">Layer1</option>
+  </select>
     <label for="">Select Mode</label>
     <select id="modeSelect">
         <option value="0">Image</option>
@@ -22,13 +27,14 @@
     <input type="number" placeholder="Output width: 800" id="outputWidth">
     <input type="number" placeholder="Output height: 800" id="outputHeight">
     <div id="canvasContainer">
-      <canvas id="displayCanvas"></canvas>
+      <canvas id="displayCanvas1"></canvas>
       <canvas id="highlightCanvas"></canvas>
     </div>
     <button id="downloadButton">Download Image</button>
     <button id="jsonBtn">Download JSON</button>
 
 </body>
+  <script src="canvas.js"></script>
   <script src="script.js"></script>
 
 </html>
