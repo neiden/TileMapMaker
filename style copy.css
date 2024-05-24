@@ -1,0 +1,78 @@
+@font-face {
+    font-family: Silkscreen;
+    src: url('slkscr.ttf');
+}
+
+#gameScreen {
+    background-color: #000;
+    color: #fff;
+    padding: 20px;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    margin: 0 auto; /* Center the element horizontally */
+    position: absolute;
+    width: 35vw;
+    height: 38vw;
+    top: 10%;
+    left: 30%;
+}
+
+body{
+    background-image: url('assets/bg.jpg');
+    background-size: cover;
+}
+
+
+h1 {font-family: Silkscreen;
+}  
+
+.project{
+    display: none;
+    font-family: Silkscreen;
+    font-size: 20px;
+    color: white;
+    text-align: center;
+    margin-top: 10px;
+    position: absolute;
+    left: 50%;
+    padding: 100px;
+    background-color:burlywood;
+    animation-name: expand;
+    animation-duration:1.5s;
+}
+@keyframes expand{
+    0%{
+        transform: scale(0);
+    }
+    10%{
+        transform: scale(.1);
+    }
+    20%{
+        transform: scale(.2);
+    }
+    30%{
+        transform: scale(.3);
+    }
+    40%{
+        transform: scale(.4);
+    }
+    50%{
+        transform: scale(.5);
+    }
+    60%{
+        transform: scale(.6);
+    }
+    70%{
+        transform: scale(.7);
+    }
+    80%{
+        transform: scale(.8);
+    }
+    90%{
+        transform: scale(.9);
+    }   
+    100%{
+        transform: scale(1);
+    }
+
+}   

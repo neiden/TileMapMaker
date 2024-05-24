@@ -1,15 +1,5 @@
 //TODO:
-// Refactor code to use Canvas object instead of global variables
-// Add grid background to displayCanvas
-// Reinitialize tileMap when tileSize is changed 
-// Add behavior for JSON mode:
-// - Add label input whenever a new tile is selected [x]
-// - Create download JSON button that downloads contents of tileMap and the labels for each tile
-// Add event listener for dragging mouse to draw tiles [x]
-// Add feature to define size of output canvas [x]
-// Add behavior for Image mode: [x]
-// - Create download image button that downloads contents of displayCanvas [x]
-// style page??
+// Add import JSON functionality
 
 
 var currCtx = null;
@@ -36,10 +26,8 @@ var mode = 0;
 modeSelect.addEventListener('change', function(e) {
     if (e.target.value === '0') {
         mode = 0;
-       console.log("Selected Image")
     } else {
         mode = 1;
-        console.log("Selected JSON")
     }
 });
 
@@ -120,8 +108,6 @@ tileImg.onload = function() {
 };
 
 canvas.addEventListener('mousemove', function(e) {
-    console.log("Top Canvas: " + topCanvas.canvas.id);
-    console.log("Current Canvas: " + currentCanvas.id);
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -134,7 +120,6 @@ canvas.addEventListener('mousemove', function(e) {
     ctx.strokeStyle = 'red';
     ctx.strokeRect(tileX * tileSize, tileY * tileSize, tileSize, tileSize);
 });
-
 
 
 canvas.addEventListener('click', function(e) {
@@ -158,8 +143,6 @@ canvas.addEventListener('click', function(e) {
             x: selectedTile.x * tileSize,
             y: selectedTile.y * tileSize};
     }
-    console.log(labels)
-    console.log(selectedTilesMap);
   });
 
 var currentTile = new Image();
@@ -167,15 +150,14 @@ const outputCanvas = document.getElementById('displayCanvas1');
 const outputCtx = outputCanvas.getContext('2d');
 outputCanvas.width = canvasWidth;
 outputCanvas.height = canvasHeight;
-outputCtx.fillStyle = 'grey';
-outputCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+
 var tileMap = loadTileMap();
 
 function loadTileMap(){
     let tileMap = {[layer]: new Array(Math.floor(outputCanvas.width/tileSize))} ;
     for (let i = 0; i < tileMap[layer].length; ++i) {
         tileMap[layer][i] = new Array(Math.floor(outputCanvas.height/tileSize));
-    }
+    }   
     for (let i = 0; i < tileMap[layer].length; ++i) {
         for (let j = 0; j < Math.floor(outputCanvas.height/tileSize); ++j) {
             tileMap[layer][i][j] = 0;
@@ -207,7 +189,6 @@ function downloadJSON(){
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
 }
 
 function downloadCanvasAsPNG() {
@@ -219,9 +200,6 @@ function downloadCanvasAsPNG() {
     link.click();
     document.body.removeChild(link);
 }
-
-
-
 
 
 const highlightCanvas = document.getElementById('highlightCanvas');
@@ -264,3 +242,18 @@ topCanvas.canvas.addEventListener('mousemove', function(e) {
 topCanvas.canvas.addEventListener('contextmenu', function(e) {
     topCanvas.deleteSingleTile(e, currentCanvas, layer);
 });
+
+
+
+const backgroundCanvas = document.getElementById('backgroundCanvas');
+const backgroundCtx = backgroundCanvas.getContext('2d');
+backgroundCanvas.width = canvasWidth;
+backgroundCanvas.height = canvasHeight;
+backgroundCanvas.style.position = 'absolute';
+backgroundCanvas.style.top = '0';
+backgroundCanvas.style.left = '0';
+for (let i = 0; i < backgroundCanvas.width; i += tileSize) {
+    for (let j = 0; j < backgroundCanvas.height; j += tileSize) {
+        backgroundCtx.strokeRect(i, j, tileSize, tileSize);
+    }
+}
