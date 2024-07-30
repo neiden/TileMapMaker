@@ -4,6 +4,10 @@
 
 var currCtx = null;
 var topCanvas = null;
+var scale = 1;
+
+let translateX = 0;
+let translateY = 0;
 
 const fileInput = document.getElementById('fileInput');
 
@@ -16,7 +20,6 @@ fileInput.addEventListener('change', function(e) {
     reader.addEventListener('load', function(e) {
         tileImg.src = e.target.result;
     });
-
     reader.readAsDataURL(file);
 });
 
@@ -73,28 +76,37 @@ let tileSize = 32;
 const tileSizeInput = document.getElementById('tileSizeInput');
 const outputHeightInput = document.getElementById('outputHeight');
 const outputWidthInput = document.getElementById('outputWidth');
-const canvasHeight = 800;
-const canvasWidth = 800;
+var canvasHeight = 800;
+var canvasWidth = 800;
 var canvasLayers = [];
 
 
 outputHeightInput.addEventListener('change', function(e) {
-    const height = parseInt(e.target.value);
+    let height = parseInt(e.target.value);
     canvasHeight = height;
     outputCanvas.height = canvasHeight;
     highlightCanvas.height = canvasHeight;
+    backgroundCanvas.height = canvasHeight;
+    topCanvas.height = canvasHeight;
+    drawBackground();
     tileMap = loadTileMap();
 });
+
 outputWidthInput.addEventListener('change', function(e) {
-    const width = parseInt(e.target.value);
+    let width = parseInt(e.target.value);
     canvasWidth = width;
     outputCanvas.width = canvasWidth;
     highlightCanvas.width = canvasWidth;
+    backgroundCanvas.width = canvasWidth;
+    topCanvas.width = canvasWidth;
+    drawBackground();
     tileMap = loadTileMap();
 });
 
 tileSizeInput.addEventListener('change', function(e) {
     tileSize = parseInt(e.target.value);
+    topCanvas.tileSize = tileSize;
+    drawBackground();
 });
 
 let selectedTile = { x: 0, y: 0 };
@@ -130,14 +142,17 @@ canvas.addEventListener('click', function(e) {
     selectedTile.x = Math.floor(x / tileSize);
     selectedTile.y = Math.floor(y / tileSize);
     const key = `${selectedTile.x},${selectedTile.y}`;
-    console.log('key:', key)
+    console.log('key:', key);
+    console.log('selectedTilesMap:', JSON.stringify(selectedTilesMap));
     if (selectedTilesMap[key]) {
         //Tile has already been selected before, find the associated label value
         id = selectedTilesMap[key];
     }
     else{
         //Tile has not been selected before, assign a new label value
-        ++id;
+        //Id should increment from the greatest ID so far, not just increment by 1 from the current
+        // 
+        id = Object.keys(labels).length + 1;
         selectedTilesMap[key] = id
         labels[id] = {
             x: selectedTile.x * tileSize,
@@ -154,16 +169,17 @@ outputCanvas.height = canvasHeight;
 var tileMap = loadTileMap();
 
 function loadTileMap(){
+    console.log("Attempting to recreate tileMap ...");
     let tileMap = {[layer]: new Array(Math.floor(outputCanvas.width/tileSize))} ;
     for (let i = 0; i < tileMap[layer].length; ++i) {
         tileMap[layer][i] = new Array(Math.floor(outputCanvas.height/tileSize));
     }   
     for (let i = 0; i < tileMap[layer].length; ++i) {
-        for (let j = 0; j < Math.floor(outputCanvas.height/tileSize); ++j) {
+        for (let j = 0; j < Math.floor(outputCanvas.width/tileSize); ++j) {
             tileMap[layer][i][j] = 0;
         }
     }
-    console.log(tileMap)
+    console.log("Tile Map recreated: " + JSON.stringify(tileMap));
     return tileMap;
 }
 
@@ -214,9 +230,11 @@ var currentCanvas = outputCanvas;
 var topCanvas = new Canvas('highlightCanvas', tileSize, canvasWidth, canvasHeight);
 
 topCanvas.canvas.addEventListener('click', function(e) {
-    topCanvas.drawTile(currentCanvas, selectedTile, e, tileMap, layer, id);
+    topCanvas.drawTile(currentCanvas, selectedTile, e, tileMap, layer, id, scale, translateX, translateY);
     console.log(tileMap);
+    console.log(labels);
 });
+
 
 topCanvas.canvas.addEventListener('mousedown', function(e) {
     isDragging = true;
@@ -229,13 +247,13 @@ topCanvas.canvas.addEventListener('mouseup', function(e) {
 
 topCanvas.canvas.addEventListener('mousemove', function(e) {
     if (!isDragging){
-        topCanvas.highlightTile(e)
+        topCanvas.highlightTile(e, scale, translateX, translateY)
     }
     else if (rightClick){
-        topCanvas.deleteTile(e, currentCanvas, layer);
+        topCanvas.deleteTile(e, currentCanvas, layer, scale, translateX, translateY);
     }
     else{
-        topCanvas.drawTile(currentCanvas, selectedTile, e, tileMap, layer, id);
+        topCanvas.drawTile(currentCanvas, selectedTile, e, tileMap, layer, id, scale, translateX, translateY);
     }
 });
 
@@ -243,6 +261,61 @@ topCanvas.canvas.addEventListener('contextmenu', function(e) {
     topCanvas.deleteSingleTile(e, currentCanvas, layer);
 });
 
+
+// topCanvas.canvas.addEventListener('wheel', function(e){
+//     e.preventDefault();
+//     const scaleFactor = e.deltaY < 0 ? 1.05 : 0.95; // Zoom in if scroll up, zoom out if scroll down
+
+//     const rect = topCanvas.canvas.getBoundingClientRect();
+//     const x = e.clientX - rect.left; // Mouse x coordinates
+//     const y = e.clientY - rect.top; // Mouse y coordinates
+
+//     const dx = x - (x * scaleFactor);
+//     const dy = y - (y * scaleFactor);
+    
+//     backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+//     topCanvas.ctx.clearRect(0, 0, topCanvas.canvas.width, topCanvas.canvas.height);
+//     outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+
+//     backgroundCtx.translate(x, y); // Translate to the mouse position
+//     backgroundCtx.scale(scaleFactor, scaleFactor); // Scale the canvas context
+//     backgroundCtx.translate(-x, -y); // Translate back
+//     topCanvas.ctx.translate(x, y);
+//     topCanvas.ctx.scale(scaleFactor, scaleFactor); // Scale the canvas context
+//     topCanvas.ctx.translate(-x, -y); 
+//     outputCtx.translate(x, y);
+//     outputCtx.scale(scaleFactor, scaleFactor);
+//     outputCtx.translate(-x, -y);
+
+//     translateX += dx;
+//     translateY += dy;
+
+//     scale *= scaleFactor; // Update the scale
+//     //backgroundCtx.scale(scaleFactor, scaleFactor);
+    
+//     drawBackground();
+//     drawContent();
+//     // Redraw the content of the canvas with the new scale // Clear the canvas
+//     //
+
+//     })
+function drawContent(){
+    let currentCtx = currentCanvas.getContext('2d');
+    for (let i = 0; i < tileMap[layer].length; ++i) {
+        for (let j = 0; j < tileMap[layer][i].length; ++j) {
+            if (tileMap[layer][i][j] !== 0) {
+                currentCtx.drawImage(tileImg, labels[tileMap[layer][i][j]].x, labels[tileMap[layer][i][j]].y, tileSize, tileSize, j * tileSize, i * tileSize, tileSize, tileSize);
+                //topCanvas.drawTile(currentCanvas, labels[tileMap[layer][i][j]], {clientX: i * tileSize * scale, clientY: j * tileSize * scale}, tileMap, layer, tileMap[layer][i][j], scale);
+                // currentTile.onload = function() {
+                //     outputCtx.drawImage(currentTile, labels[tileMap[layer][i][j]].x, labels[tileMap[layer][i][j]].y, tileSize, tileSize, i * tileSize * scale, j * tileSize * scale, tileSize, tileSize);
+                // }
+                // currentTile.src = tileImg.src;
+            }
+        }
+    }
+
+}
 
 
 const backgroundCanvas = document.getElementById('backgroundCanvas');
@@ -252,8 +325,14 @@ backgroundCanvas.height = canvasHeight;
 backgroundCanvas.style.position = 'absolute';
 backgroundCanvas.style.top = '0';
 backgroundCanvas.style.left = '0';
-for (let i = 0; i < backgroundCanvas.width; i += tileSize) {
-    for (let j = 0; j < backgroundCanvas.height; j += tileSize) {
-        backgroundCtx.strokeRect(i, j, tileSize, tileSize);
+
+function drawBackground(){
+    backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    for (let i = 0; i < backgroundCanvas.width; i += tileSize) {
+        for (let j = 0; j < backgroundCanvas.height; j += tileSize) {
+            backgroundCtx.strokeRect(i, j, tileSize, tileSize);
+        }
     }
 }
+
+drawBackground();

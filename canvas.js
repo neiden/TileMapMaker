@@ -17,30 +17,33 @@ class Canvas{
         this.canvas.removeEventListener(event, this.listeners[event]);
         delete this.listeners[event];
     }
+    
 
-    drawTile(canvas, selectedTile, e, tileMap, layer, id){
-        console.log("Layer being drawn on: " + layer);
+    drawTile(canvas, selectedTile, e, tileMap, layer, id,scale){
         const currCanvas = canvas;
         const rect = currCanvas.getBoundingClientRect();
         const currCtx = currCanvas.getContext('2d');
-        const x = Math.floor((e.clientX - rect.left) / this.tileSize) * this.tileSize;
-        const y = Math.floor((e.clientY - rect.top) / this.tileSize) * this.tileSize;
+        const x = Math.floor((e.clientX - rect.left) / this.tileSize * scale) * this.tileSize;
+        const y = Math.floor((e.clientY - rect.top) / this.tileSize * scale) * this.tileSize;
         currCtx.drawImage(tileImg, selectedTile.x * this.tileSize, selectedTile.y * this.tileSize, this.tileSize, this.tileSize, x, y, this.tileSize, this.tileSize);
 
         tileMap[layer][Math.floor(y/tileSize)][Math.floor(x/tileSize)] = id;
     }
 
 
-    highlightTile(e){
+    highlightTile(e, scale, translateX, translateY){
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const tileX = Math.floor(x / this.tileSize);
-        const tileY = Math.floor(y / this.tileSize);
-      
+        const effectiveLeft = rect.left + translateX;
+        const effectiveTop = rect.top + translateY;
+        const x = (e.clientX - rect.left - translateX) / scale;
+        const y = (e.clientY - rect.top - translateY) / scale;
+        const tileX = Math.floor(x / (this.tileSize));
+        const tileY = Math.floor(y / (this.tileSize));
+        
+        //console.log("Calling highlightTile() with x and y: " + x + " " + y)
         this.ctx.clearRect(0, 0, this.width, this.height);
         this.ctx.strokeStyle = 'red';
-        this.ctx.strokeRect(tileX * tileSize, tileY * tileSize, tileSize, tileSize);
+        this.ctx.strokeRect(tileX * tileSize, tileY * tileSize, tileSize , tileSize);
     }
 
     deleteTile(e, canvas, layer){
@@ -69,4 +72,5 @@ class Canvas{
     }
 
 
-}
+
+}  
